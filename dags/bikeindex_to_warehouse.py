@@ -40,7 +40,7 @@ with DAG(
     default_args=default_args,
     description='DAG to grab shit from BikeIndex API to Data Warehouse',
     schedule_interval=timedelta(days=5), #means it runs every day, probably at 00:00 GMT
-    start_date=days_ago(300),
+    start_date=datetime(2018,1,1),
     max_active_runs=1,
     tags=['example'],
 ) as dag:
@@ -58,6 +58,8 @@ with DAG(
     #     retries=3,
     # )
     bike_db = "postgres_bikes"
+    days_back = 5
+    time_delta = 5
 
     create_schemas = PostgresOperator(
         task_id='create_schemas',
@@ -81,7 +83,7 @@ with DAG(
         task_id='bikewise_to_postgres',
         python_callable=intoDBToday,
         # op_args=['arguments_passed_to_callable'],
-        op_kwargs={'postgres_conn_id': bike_db, 'days_back': 20, 'time_delta': 15}
+        op_kwargs={'postgres_conn_id': bike_db, 'days_back': days_back, 'time_delta': time_delta}
     )
 
     staging = PostgresOperator(
@@ -99,7 +101,7 @@ with DAG(
     cap_transactions = PythonOperator(
         task_id='cap_transactions',
         python_callable=capTransactions,
-        op_kwargs={'postgres_conn_id': bike_db, 'days_back': 20, 'time_delta': 15}
+        op_kwargs={'postgres_conn_id': bike_db, 'days_back': days_back, 'time_delta': time_delta}
 
     )
 
