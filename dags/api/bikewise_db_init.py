@@ -139,7 +139,6 @@ def intoDBToday(**kwargs):
 
     postgres_hook = PostgresHook(postgres_conn_id)
     engine = postgres_hook.get_sqlalchemy_engine()
-    #create declarative base's metadata
     Base.metadata.create_all(bind=engine)
 
     Session = sessionmaker(bind=engine)
@@ -156,19 +155,18 @@ def intoDBToday(**kwargs):
 
     occurred_after_date = d.astimezone(tz=None) - timedelta(days=days_back)
     occurred_before_date = occurred_after_date + timedelta(days=time_delta)
-    # get_api_timestamp = occurred_after_date.timestamp() 
     stolen_bikes = getEventAfterBefore(occurred_after_date.timestamp(), occurred_before_date.timestamp())
     for s in stolen_bikes:
-        b = Bike(s)
+        try:
+            b = Bike(s)
+        except KeyError:
+            print(s['id'], "- keyerror")
+            continue
         try:
             session.add(b)
-            timestamp = b.occurred_at
             session.commit()
         except exc.IntegrityError:
             session.rollback()
-    # session.commit()
-    # session.add(Transaction(occurred_after_date.timestamp(), occurred_before_date.timestamp()))
-    # session.commit()
     session.close()
 
 def capTransactions(**kwargs):
